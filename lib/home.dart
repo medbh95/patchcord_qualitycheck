@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:patchcord_qualitycheck/raspberry_mqtt.dart';
 import 'package:tflite/tflite.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -178,7 +179,12 @@ class _HomeState extends State<Home> {
                     ),
                     SizedBox(height: 30),
                     GestureDetector(
-                      onTap: pickGalleryImage,
+                      onTap: () {
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => const RaspberryMQTT()));
+                      },
                       child: Container(
                         width: MediaQuery.of(context).size.width - 100,
                         alignment: Alignment.center,
