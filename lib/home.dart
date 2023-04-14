@@ -183,7 +183,7 @@ class _HomeState extends State<Home> {
                         Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (context) => const RaspberryMQTT()));
+                                builder: (context) => const MyHomePage()));
                       },
                       child: Container(
                         width: MediaQuery.of(context).size.width - 100,

@@ -6,44 +6,40 @@ import 'package:mqtt_client/mqtt_server_client.dart';
 
 import 'mqtt_manager.dart';
 
-class RaspberryMQTT extends StatefulWidget {
-  const RaspberryMQTT({super.key});
+class MyHomePage extends StatefulWidget {
+  const MyHomePage({Key? key}) : super(key: key);
 
   @override
-  State<RaspberryMQTT> createState() => _RaspberryMQTTState();
+  State<MyHomePage> createState() => _MyHomePageState();
 }
 
-class _RaspberryMQTTState extends State<RaspberryMQTT> {
+class _MyHomePageState extends State<MyHomePage> {
   String myText = '';
-
-  final mqttClient = MqttClient('broker.mqtt.com', '');
-  MQTTClientManager mqttClientManager = MQTTClientManager();
-  final String pubTopic = "mqtt/pimylifeup";
+  MQTTManager manager = MQTTManager(
+    host: "",
+    topic: "mqtt/patchcord",
+    identifier: "flutter_patchcord",
+  );
   final brokerAddressController = TextEditingController();
+  void _configureAndConnect(String host) {
+    manager = MQTTManager(
+      host: host,
+      topic: "mqtt/patchcord",
+      identifier: "flutter_patchcord",
+    );
 
-  IconData connectionStatusIcon = Icons.warning;
-  String connectionStatusText = 'Not Connected';
+    manager.initializeMQTTClient();
+
+    manager.connect();
+  }
+
+  void _disconnect() {
+    manager.disconnect();
+  }
+
   @override
   void initState() {
-    setupMqttClient();
-    setupUpdatesListener();
     super.initState();
-  }
-
-  Future<void> setupMqttClient() async {
-    await mqttClientManager.connect();
-    mqttClientManager.subscribe(pubTopic);
-  }
-
-  void setupUpdatesListener() {
-    mqttClientManager
-        .getMessagesStream()!
-        .listen((List<MqttReceivedMessage<MqttMessage?>>? c) {
-      final recMess = c![0].payload as MqttPublishMessage;
-      final pt =
-          MqttPublishPayload.bytesToStringAsString(recMess.payload.message);
-      print('MQTTClient::Message received on topic: <${c[0].topic}> is $pt\n');
-    });
   }
 
   @override
@@ -80,27 +76,24 @@ class _RaspberryMQTTState extends State<RaspberryMQTT> {
 
                 if (brokerAddress.isEmpty) {
                   setState(() {
-                    connectionStatusIcon = Icons.error;
-                    connectionStatusText =
+                    manager.connectionStatusIcon = Icons.error;
+                    manager.connectionStatusText =
                         'Please enter the MQTT broker address.';
                   });
                   return;
                 }
 
-                mqttClient.disconnect();
-
                 try {
-                  await mqttClient.connect(brokerAddress, '');
-                  mqttClient.subscribe('mqtt/pimylifeup', MqttQos.exactlyOnce);
+                  _configureAndConnect(brokerAddress);
                   setState(() {
-                    connectionStatusIcon = Icons.check_circle;
-                    connectionStatusText = 'Connected';
+                    manager.connectionStatusIcon = Icons.check_circle;
+                    manager.connectionStatusText = 'Connected';
                   });
-                  print('Connected');
+                  print('connected');
                 } catch (e) {
                   setState(() {
-                    connectionStatusIcon = Icons.error;
-                    connectionStatusText = 'Error: $e';
+                    manager.connectionStatusIcon = Icons.error;
+                    manager.connectionStatusText = 'Error: $e';
                   });
                   print('Error: $e');
                 }
@@ -110,22 +103,29 @@ class _RaspberryMQTTState extends State<RaspberryMQTT> {
             Row(
               children: [
                 IconButton(
-                  icon: Icon(connectionStatusIcon),
+                  icon: Icon(manager.connectionStatusIcon),
                   onPressed: null,
                 ),
                 SizedBox(width: 8.0),
-                Text(connectionStatusText),
+                Text(manager.connectionStatusText),
               ],
             ),
             SizedBox(height: 16.0),
             Expanded(
               child: Center(
-                child: Text(myText),
+                child: Text(manager.msg),
               ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  @override
+  void deactivate() {
+    _disconnect();
+
+    super.deactivate();
   }
 }

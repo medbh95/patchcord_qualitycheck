@@ -1,68 +1,107 @@
-import 'dart:io';
-
 import 'package:mqtt_client/mqtt_client.dart';
+
 import 'package:mqtt_client/mqtt_server_client.dart';
 
-class MQTTClientManager {
-  MqttServerClient client =
-      MqttServerClient.withPort('192.168.8.105', 'mobile_client', 1883);
+import 'package:flutter/material.dart';
 
-  Future<int> connect() async {
-    client.logging(on: true);
-    client.keepAlivePeriod = 60;
-    client.onConnected = onConnected;
-    client.onDisconnected = onDisconnected;
-    client.onSubscribed = onSubscribed;
-    client.pongCallback = pong;
+class MQTTManager {
+  MqttServerClient? _client;
 
-    final connMessage =
-        MqttConnectMessage().startClean().withWillQos(MqttQos.atLeastOnce);
-    client.connectionMessage = connMessage;
+  IconData connectionStatusIcon = Icons.warning;
+  String connectionStatusText = 'Not Connected';
+  final String _identifier;
+
+  final String _host;
+
+  final String _topic;
+  String msg = "";
+  MQTTManager({
+    required String host,
+    required String topic,
+    required String identifier,
+  })  : _identifier = identifier,
+        _host = host,
+        _topic = topic;
+
+  void initializeMQTTClient() {
+    _client = MqttServerClient(_host, _identifier);
+
+    _client!.port = 1883;
+
+    _client!.keepAlivePeriod = 20;
+
+    _client!.onDisconnected = onDisconnected;
+
+    _client!.secure = false;
+
+    _client!.logging(on: true);
+
+    _client!.onConnected = onConnected;
+
+    _client!.onSubscribed = onSubscribed;
+
+    final MqttConnectMessage connMess = MqttConnectMessage()
+        .startClean() // Non persistent session for testing
+
+        .withWillQos(MqttQos.atLeastOnce);
+
+    print('Client connecting...');
+
+    _client!.connectionMessage = connMess;
+  }
+
+  void connect() async {
+    assert(_client != null);
 
     try {
-      await client.connect();
-    } on NoConnectionException catch (e) {
-      print('MQTTClient::Client exception - $e');
-      client.disconnect();
-    } on SocketException catch (e) {
-      print('MQTTClient::Socket exception - $e');
-      client.disconnect();
-    }
+      print('Starting to connect...');
 
-    return 0;
+      await _client!.connect();
+    } on Exception catch (e) {
+      print('Client exception - $e');
+
+      disconnect();
+    }
   }
 
   void disconnect() {
-    client.disconnect();
+    print('Disconnected');
+
+    _client!.disconnect();
   }
 
-  void subscribe(String topic) {
-    client.subscribe(topic, MqttQos.atLeastOnce);
-  }
+  void publish(String message) {
+    final MqttClientPayloadBuilder builder = MqttClientPayloadBuilder();
 
-  void onConnected() {
-    print('MQTTClient::Connected');
-  }
+    builder.addString(message);
 
-  void onDisconnected() {
-    print('MQTTClient::Disconnected');
+    _client!.publishMessage(_topic, MqttQos.exactlyOnce, builder.payload!);
   }
 
   void onSubscribed(String topic) {
-    print('MQTTClient::Subscribed to topic: $topic');
+    print('Subscribed to topic $topic');
   }
 
-  void pong() {
-    print('MQTTClient::Ping response received');
+  void onDisconnected() {
+    print('Client disconnected');
   }
 
-  void publishMessage(String topic, String message) {
-    final builder = MqttClientPayloadBuilder();
-    builder.addString(message);
-    client.publishMessage(topic, MqttQos.exactlyOnce, builder.payload!);
-  }
+  void onConnected() {
+    print('Connected to client');
 
-  Stream<List<MqttReceivedMessage<MqttMessage>>>? getMessagesStream() {
-    return client.updates;
+    _client!.subscribe(_topic, MqttQos.atLeastOnce);
+
+    _client!.updates!.listen((List<MqttReceivedMessage<MqttMessage?>>? c) {
+      final MqttPublishMessage recMess = c![0].payload as MqttPublishMessage;
+
+      final String pt =
+          MqttPublishPayload.bytesToStringAsString(recMess.payload.message);
+
+      print('Topic is <${c[0].topic}>, payload is <-- $pt -->');
+      msg = pt;
+      print('');
+    });
+
+    print('Connection was successful');
   }
 }
