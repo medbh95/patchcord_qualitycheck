@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
-import 'home.dart';
+import 'app.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+
   runApp(MyApp());
 }
 
@@ -11,7 +14,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'PatchCordQualityCheck',
-      home: Home(),
+      home: PatchCordQualityCheck(),
       debugShowCheckedModeBanner: false,
     );
   }
