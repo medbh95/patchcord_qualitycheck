@@ -13,6 +13,8 @@ import 'package:convert/convert.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+import 'utils/strings.dart';
+
 class PatchCordQualityCheck extends StatefulWidget {
   @override
   _PatchCordQualityCheckState createState() => _PatchCordQualityCheckState();
@@ -46,18 +48,18 @@ class _PatchCordQualityCheckState extends State<PatchCordQualityCheck> {
 // Regular expression to validate IP address
   RegExp ipRegExp = RegExp(
       r'^([01]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5])\.([01]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5])\.([01]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5])\.([01]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5])$');
-  Future<void> requestStoragePermission() async {
-    final permissionStatus = await Permission.storage.request();
-    if (permissionStatus != PermissionStatus.granted) {
-      throw Exception('Storage permission not granted');
-    }
-  }
+  // Future<void> requestStoragePermission() async {
+  //   final permissionStatus = await Permission.storage.request();
+  //   if (permissionStatus != PermissionStatus.granted) {
+  //     throw Exception('Storage permission not granted');
+  //   }
+  // }
 
   @override
   void initState() {
     super.initState();
     check();
-    requestStoragePermission();
+    //requestStoragePermission();
     _loadLastValue();
     //loadTfliteModel();
   }
@@ -175,9 +177,13 @@ class _PatchCordQualityCheckState extends State<PatchCordQualityCheck> {
     if (!await file.exists()) {
       print("exist");
       setState(() {
+        checkingUpdates = false;
         shouldDownload = true;
       });
     } else if (md5 != null) {
+      setState(() {
+        checkingUpdates = false;
+      });
       print("not exist");
       var hexMd5 = hex.encode(base64Decode(md5));
       print("_checkFiles");
@@ -249,19 +255,25 @@ class _PatchCordQualityCheckState extends State<PatchCordQualityCheck> {
   }
 
   Future<void> checkAndDownloadFile() async {
+    setState(() {
+      checkingUpdates = false;
+    });
     final localHash = await _checkFiles();
     final apiHash = await getModelHash();
     print(localHash);
     print(apiHash);
+
     if (localHash != null && apiHash != null) {
       if (localHash != apiHash) {
         print("model deprecated downloading ...");
         setState(() {
+          checkingUpdates = false;
           shouldDownload = true;
         });
       } else {
         print("model up to date");
         setState(() {
+          checkingUpdates = false;
           _isUpToDate = true;
         });
         final loadResult = await loadModel();
@@ -362,8 +374,6 @@ class _PatchCordQualityCheckState extends State<PatchCordQualityCheck> {
       _currentStep = 0;
       predicting = false;
       _isUpToDate = false;
-      shouldDownload = false;
-      downloading = false;
     });
   }
 
@@ -478,7 +488,7 @@ class _PatchCordQualityCheckState extends State<PatchCordQualityCheck> {
           ),
           child: AppBar(
             backgroundColor: Colors.cyan,
-            title: Text('PatchCord Quality Check'),
+            title: Text(Strings.appTitle),
             centerTitle: true,
             elevation: 0.0,
           ),
@@ -508,8 +518,8 @@ class _PatchCordQualityCheckState extends State<PatchCordQualityCheck> {
                   steps: <Step>[
                     Step(
                       title: Text(_currentStep >= 1
-                          ? "Connected"
-                          : 'Enter your Raspberry Pi IP Address and connect'),
+                          ? Strings.connectedMsg
+                          : Strings.promptTitle),
                       content: Column(
                         mainAxisAlignment: MainAxisAlignment.start,
                         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -527,17 +537,17 @@ class _PatchCordQualityCheckState extends State<PatchCordQualityCheck> {
                                   validator: (value) {
                                     if (!connected &&
                                         (value == null || value.isEmpty)) {
-                                      return 'Please enter your Raspberry Pi Address';
+                                      return Strings.adressEmptyMsg;
                                     } else if (!connected &&
                                         !ipRegExp.hasMatch(value!)) {
-                                      return 'Invalid IP address format';
+                                      return Strings.ipIncorrectMsg;
                                     }
                                     return null;
                                   },
                                   controller: addressController,
                                   decoration: InputDecoration(
-                                    labelText: 'MQTT Broker Address',
-                                    hintText: 'Enter the MQTT broker address',
+                                    labelText: Strings.inputLabel,
+                                    hintText: Strings.inputHint,
                                   ),
                                 ),
                                 SizedBox(height: 10.0),
@@ -550,8 +560,9 @@ class _PatchCordQualityCheckState extends State<PatchCordQualityCheck> {
                                       elevation: 5,
                                     ),
                                     onPressed: connected ? disconnect : connect,
-                                    child: Text(
-                                        connected ? 'Disconnect' : 'Connect'),
+                                    child: Text(connected
+                                        ? Strings.connectText
+                                        : Strings.disconnectText),
                                   ),
                                 ),
                                 SizedBox(height: 10.0),
@@ -593,7 +604,7 @@ class _PatchCordQualityCheckState extends State<PatchCordQualityCheck> {
                                   elevation: 5, //  / set the text color
                                 ),
                                 onPressed: connected ? continued : () {},
-                                child: Text('Continue'),
+                                child: Text(Strings.continueText),
                               ),
                             ],
                           ),
@@ -617,6 +628,7 @@ class _PatchCordQualityCheckState extends State<PatchCordQualityCheck> {
                           RadioListTile<int>(
                             title: Text(' Tensor Flow Lite Model'),
                             value: 1,
+                            activeColor: Colors.cyan,
                             groupValue: _selectedValue,
                             onChanged: (int? value) {
                               setState(() {
@@ -627,6 +639,7 @@ class _PatchCordQualityCheckState extends State<PatchCordQualityCheck> {
                           RadioListTile<int>(
                             title: Text('Raspberry Pi H5 Model'),
                             value: 2,
+                            activeColor: Colors.cyan,
                             groupValue: _selectedValue,
                             onChanged: (int? value) {
                               setState(() {
@@ -685,6 +698,13 @@ class _PatchCordQualityCheckState extends State<PatchCordQualityCheck> {
                       content: _selectedValue == 1
                           ? Column(
                               children: <Widget>[
+                                SizedBox(height: 5.0),
+                                if (checkingUpdates ||
+                                    shouldDownload && !downloading)
+                                  CircularProgressIndicator(
+                                    color: Colors.cyan,
+                                  ),
+                                SizedBox(height: 10.0),
                                 if (shouldDownload && !downloading)
                                   Padding(
                                     padding: const EdgeInsets.all(8.0),
@@ -744,7 +764,8 @@ class _PatchCordQualityCheckState extends State<PatchCordQualityCheck> {
                                               style: ElevatedButton.styleFrom(
                                                 backgroundColor:
                                                     shouldDownload ||
-                                                            downloading
+                                                            downloading ||
+                                                            checkingUpdates
                                                         ? Colors.grey
                                                         : Colors.cyan,
                                                 shape: RoundedRectangleBorder(
@@ -754,10 +775,11 @@ class _PatchCordQualityCheckState extends State<PatchCordQualityCheck> {
                                                 elevation:
                                                     5, //  / set the text color
                                               ),
-                                              onPressed:
-                                                  shouldDownload || downloading
-                                                      ? () {}
-                                                      : checkAndDownloadFile,
+                                              onPressed: shouldDownload ||
+                                                      downloading ||
+                                                      checkingUpdates
+                                                  ? () {}
+                                                  : checkAndDownloadFile,
                                               child: Row(
                                                 children: [
                                                   Icon(Icons.refresh),
@@ -945,7 +967,7 @@ class _PatchCordQualityCheckState extends State<PatchCordQualityCheck> {
                                           elevation: 5, //  / set the text color
                                         ),
                                         onPressed: _pickImageGallery,
-                                        child: Text('Select From Gallery'),
+                                        child: Text(Strings.pickGalleryText),
                                       ),
                                     ]),
                                 Row(
@@ -965,7 +987,7 @@ class _PatchCordQualityCheckState extends State<PatchCordQualityCheck> {
                                       onPressed: _imageFile != null
                                           ? continued
                                           : () {},
-                                      child: Text('Continue'),
+                                      child: Text(Strings.continueText),
                                     ),
                                     SizedBox(
                                       width: 20,
@@ -982,7 +1004,7 @@ class _PatchCordQualityCheckState extends State<PatchCordQualityCheck> {
                                         elevation: 5, //  / set the text color
                                       ),
                                       onPressed: downloading ? () {} : cancel,
-                                      child: Text('Cancel'),
+                                      child: Text(Strings.canceltext),
                                     ),
                                   ],
                                 ),
@@ -1011,7 +1033,7 @@ class _PatchCordQualityCheckState extends State<PatchCordQualityCheck> {
                                         child: Row(
                                           children: [
                                             Icon(Icons.upload),
-                                            Text('Upload Image'),
+                                            Text(Strings.uploadImageText),
                                           ],
                                         ),
                                       ),
@@ -1034,7 +1056,7 @@ class _PatchCordQualityCheckState extends State<PatchCordQualityCheck> {
                                       ),
                                       onPressed:
                                           !imageUploaded ? () {} : continued,
-                                      child: Text('Continue'),
+                                      child: Text(Strings.continueText),
                                     ),
                                     SizedBox(
                                       width: 20,
@@ -1049,7 +1071,7 @@ class _PatchCordQualityCheckState extends State<PatchCordQualityCheck> {
                                         elevation: 5, //  / set the text color
                                       ),
                                       onPressed: cancel,
-                                      child: Text('Cancel'),
+                                      child: Text(Strings.canceltext),
                                     ),
                                   ],
                                 ),
@@ -1063,16 +1085,16 @@ class _PatchCordQualityCheckState extends State<PatchCordQualityCheck> {
                     Step(
                       title: new Text(_selectedValue == 1
                           ? showResult
-                              ? "Prediction done"
-                              : "Prediction Results"
+                              ? Strings.predictDonemsg
+                              : Strings.predictResultmsg
                           : _currentStep >= 4
-                              ? "Prediction done"
-                              : "Prediction Results"),
+                              ? Strings.predictDonemsg
+                              : Strings.predictResultmsg),
                       content: Column(
                         children: <Widget>[
                           Text(_selectedValue == 1
-                              ? "Prediction Using TensorFlow Lite Model"
-                              : "Prediction Using Rapsberry PI H5 Model"),
+                              ? Strings.predictTfliteMsg
+                              : Strings.predictRPImsg),
                           SizedBox(height: 10),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -1096,7 +1118,7 @@ class _PatchCordQualityCheckState extends State<PatchCordQualityCheck> {
                                 child: Row(
                                   children: [
                                     Icon(Icons.search),
-                                    Text('Detect Quality'),
+                                    Text(Strings.detectQualityText),
                                   ],
                                 ),
                               ),
@@ -1110,32 +1132,57 @@ class _PatchCordQualityCheckState extends State<PatchCordQualityCheck> {
                               : Container(),
                           showResult
                               ? Text(
-                                  "Cable Quality is : $message",
+                                  Strings.resultMsg(message),
                                   style: TextStyle(
                                       color: Colors.grey, fontSize: 27),
                                 )
                               : Container(),
                           SizedBox(height: 20.0),
-                          ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor:
-                                  predicting ? Colors.grey : Colors.cyan,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(20),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor:
+                                      predicting ? Colors.grey : Colors.cyan,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  elevation: 5, //  / set the text color
+                                ),
+                                onPressed: predicting ? () {} : retry,
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.restart_alt),
+                                    Text(Strings.retrytext),
+                                  ],
+                                ),
                               ),
-                              elevation: 5, //  / set the text color
-                            ),
-                            onPressed: predicting
-                                ? () {}
-                                : () {
-                                    cancel();
+                              SizedBox(
+                                width: 10,
+                              ),
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor:
+                                      predicting ? Colors.grey : Colors.cyan,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  elevation: 5, //  / set the text color
+                                ),
+                                onPressed: predicting
+                                    ? () {}
+                                    : () {
+                                        cancel();
 
-                                    setState(() {
-                                      showResult = false;
-                                      message = "";
-                                    });
-                                  },
-                            child: Text('Cancel'),
+                                        setState(() {
+                                          showResult = false;
+                                          message = "";
+                                        });
+                                      },
+                                child: Text(Strings.canceltext),
+                              ),
+                            ],
                           ),
                         ],
                       ),
@@ -1156,6 +1203,16 @@ class _PatchCordQualityCheckState extends State<PatchCordQualityCheck> {
 
   continued() {
     _currentStep < 5 ? setState(() => _currentStep += 1) : null;
+  }
+
+  retry() {
+    setState(() {
+      _selectedValue = null;
+      _currentStep = 1;
+      _imageFile = null;
+      showResult = false;
+      message = "";
+    });
   }
 
   cancel() {
