@@ -11,7 +11,6 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:convert/convert.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 import 'utils/strings.dart';
 
@@ -48,20 +47,11 @@ class _PatchCordQualityCheckState extends State<PatchCordQualityCheck> {
 // Regular expression to validate IP address
   RegExp ipRegExp = RegExp(
       r'^([01]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5])\.([01]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5])\.([01]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5])\.([01]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5])$');
-  // Future<void> requestStoragePermission() async {
-  //   final permissionStatus = await Permission.storage.request();
-  //   if (permissionStatus != PermissionStatus.granted) {
-  //     throw Exception('Storage permission not granted');
-  //   }
-  // }
 
   @override
   void initState() {
     super.initState();
-    check();
-    //requestStoragePermission();
     _loadLastValue();
-    //loadTfliteModel();
   }
 
   loadTfliteModel() async {
@@ -70,18 +60,6 @@ class _PatchCordQualityCheckState extends State<PatchCordQualityCheck> {
       print("Model loaded successfully");
     } else {
       print("Failed to load model after downloading");
-    }
-  }
-
-  check() async {
-    Directory appDocDir = await getApplicationDocumentsDirectory();
-    String modelPath = '${appDocDir.path}/model.tflite';
-
-    if (File(modelPath).existsSync()) {
-      print('Model file exists in the app document directory.$modelPath');
-    } else {
-      print(
-          'Model file does not exist in the app document directory.$modelPath');
     }
   }
 
@@ -155,7 +133,6 @@ class _PatchCordQualityCheckState extends State<PatchCordQualityCheck> {
     setState(() {
       _imageFile = File(image.path);
     });
-    // classifyImage(_image);
   }
 
   Future<void> _pickImageGallery() async {
@@ -169,6 +146,9 @@ class _PatchCordQualityCheckState extends State<PatchCordQualityCheck> {
   }
 
   Future<String?> _checkFiles() async {
+    setState(() {
+      checkingUpdates = true;
+    });
     final appDirectory = await getApplicationDocumentsDirectory();
     final savePath = appDirectory.path + '/model.tflite';
     final file = File(savePath);
@@ -561,8 +541,8 @@ class _PatchCordQualityCheckState extends State<PatchCordQualityCheck> {
                                     ),
                                     onPressed: connected ? disconnect : connect,
                                     child: Text(connected
-                                        ? Strings.connectText
-                                        : Strings.disconnectText),
+                                        ? Strings.disconnectText
+                                        : Strings.connectText),
                                   ),
                                 ),
                                 SizedBox(height: 10.0),
@@ -573,8 +553,11 @@ class _PatchCordQualityCheckState extends State<PatchCordQualityCheck> {
                               ? Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    CircularProgressIndicator(
-                                      color: Colors.cyan,
+                                    Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: CircularProgressIndicator(
+                                        color: Colors.cyan,
+                                      ),
                                     ),
                                   ],
                                 )
@@ -699,8 +682,7 @@ class _PatchCordQualityCheckState extends State<PatchCordQualityCheck> {
                           ? Column(
                               children: <Widget>[
                                 SizedBox(height: 5.0),
-                                if (checkingUpdates ||
-                                    shouldDownload && !downloading)
+                                if (checkingUpdates)
                                   CircularProgressIndicator(
                                     color: Colors.cyan,
                                   ),
