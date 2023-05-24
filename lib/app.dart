@@ -671,13 +671,86 @@ class _PatchCordQualityCheckState extends State<PatchCordQualityCheck> {
                           : StepState.disabled,
                     ),
                     Step(
+                      title: new Text(_currentStep >= 3
+                          ? "Image Selected"
+                          : "Select Image From Gallery"),
+                      content: Column(
+                        children: [
+                          if (_imageFile != null) ...[
+                            ClipRRect(
+                                borderRadius: BorderRadius.circular(20),
+                                child: Image.file(
+                                  _imageFile!,
+                                  fit: BoxFit.fill,
+                                  width: 200,
+                                  height: 200,
+                                )),
+                            SizedBox(height: 10),
+                          ],
+                          Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.cyan,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    elevation: 5, //  / set the text color
+                                  ),
+                                  onPressed: _pickImageGallery,
+                                  child: Text('Select From Gallery'),
+                                ),
+                              ]),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: _imageFile != null
+                                      ? Colors.cyan
+                                      : Colors.grey,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  elevation: 5, //  / set the text color
+                                ),
+                                onPressed:
+                                    _imageFile != null ? continued : () {},
+                                child: Text('Continue'),
+                              ),
+                              SizedBox(
+                                width: 20,
+                              ),
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor:
+                                      downloading ? Colors.grey : Colors.cyan,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  elevation: 5, //  / set the text color
+                                ),
+                                onPressed: downloading ? () {} : cancel,
+                                child: Text('Cancel'),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      isActive: _currentStep >= 2,
+                      state: _currentStep >= 3
+                          ? StepState.complete
+                          : StepState.disabled,
+                    ),
+                    Step(
                       title: new Text(_selectedValue == 1
-                          ? _currentStep >= 3
+                          ? _currentStep >= 4
                               ? "Model Up to Date"
                               : "Check And Download Model"
-                          : _currentStep >= 3
-                              ? "Image Selected"
-                              : "Select Image From Gallery"),
+                          : _currentStep >= 4
+                              ? "Image Uploaded"
+                              : "Upload Image"),
                       content: _selectedValue == 1
                           ? Column(
                               children: <Widget>[
@@ -835,158 +908,6 @@ class _PatchCordQualityCheckState extends State<PatchCordQualityCheck> {
                                       ),
                                       onPressed: downloading ? () {} : cancel,
                                       child: Text('Cancel'),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            )
-                          : Column(
-                              children: [
-                                if (_imageFile != null) ...[
-                                  ClipRRect(
-                                      borderRadius: BorderRadius.circular(20),
-                                      child: Image.file(
-                                        _imageFile!,
-                                        fit: BoxFit.fill,
-                                        width: 200,
-                                        height: 200,
-                                      )),
-                                  SizedBox(height: 10),
-                                ],
-                                Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      ElevatedButton(
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.cyan,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(20),
-                                          ),
-                                          elevation: 5, //  / set the text color
-                                        ),
-                                        onPressed: _pickImageGallery,
-                                        child: Text('Select From Gallery'),
-                                      ),
-                                    ]),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    ElevatedButton(
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: _imageFile != null
-                                            ? Colors.cyan
-                                            : Colors.grey,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(20),
-                                        ),
-                                        elevation: 5, //  / set the text color
-                                      ),
-                                      onPressed: _imageFile != null
-                                          ? continued
-                                          : () {},
-                                      child: Text('Continue'),
-                                    ),
-                                    SizedBox(
-                                      width: 20,
-                                    ),
-                                    ElevatedButton(
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: downloading
-                                            ? Colors.grey
-                                            : Colors.cyan,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(20),
-                                        ),
-                                        elevation: 5, //  / set the text color
-                                      ),
-                                      onPressed: downloading ? () {} : cancel,
-                                      child: Text('Cancel'),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                      isActive: _currentStep >= 2,
-                      state: _currentStep >= 3
-                          ? StepState.complete
-                          : StepState.disabled,
-                    ),
-                    Step(
-                      title: new Text(_selectedValue == 1
-                          ? _currentStep >= 4
-                              ? "Image Selected"
-                              : "Select Image From Gallery"
-                          : _currentStep >= 4
-                              ? "Image Uploaded"
-                              : "Upload Image"),
-                      content: _selectedValue == 1
-                          ? Column(
-                              children: [
-                                if (_imageFile != null) ...[
-                                  ClipRRect(
-                                      borderRadius: BorderRadius.circular(20),
-                                      child: Image.file(
-                                        _imageFile!,
-                                        fit: BoxFit.fill,
-                                        width: 200,
-                                        height: 200,
-                                      )),
-                                  SizedBox(height: 10),
-                                ],
-                                Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      ElevatedButton(
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.cyan,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(20),
-                                          ),
-                                          elevation: 5, //  / set the text color
-                                        ),
-                                        onPressed: _pickImageGallery,
-                                        child: Text(Strings.pickGalleryText),
-                                      ),
-                                    ]),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    ElevatedButton(
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: _imageFile != null
-                                            ? Colors.cyan
-                                            : Colors.grey,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(20),
-                                        ),
-                                        elevation: 5, //  / set the text color
-                                      ),
-                                      onPressed: _imageFile != null
-                                          ? continued
-                                          : () {},
-                                      child: Text(Strings.continueText),
-                                    ),
-                                    SizedBox(
-                                      width: 20,
-                                    ),
-                                    ElevatedButton(
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: downloading
-                                            ? Colors.grey
-                                            : Colors.cyan,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(20),
-                                        ),
-                                        elevation: 5, //  / set the text color
-                                      ),
-                                      onPressed: downloading ? () {} : cancel,
-                                      child: Text(Strings.canceltext),
                                     ),
                                   ],
                                 ),
